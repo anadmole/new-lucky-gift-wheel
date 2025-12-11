@@ -1,0 +1,104 @@
+<script>
+const colleagues = [
+  "Ana", "Denis", "Anna", "Ajay", "Sabaresh", "Paresh", "Zsolt", 
+  "Omer", "Dmitry", "William", "Sergey", "Lana", 
+  "Abdelrahman", "Manish", "Nithesh", "Faisal"
+]; 
+
+const colors = [
+  "#FF6384","#36A2EB","#FFCE56","#8BC34A","#FF9800",
+  "#FF99CC","#66CCFF","#FFCC66","#99FF99","#CC99FF",
+  "#FF6666","#66FFCC","#FFCC99","#CCCCFF","#FFCCFF","#99CC66"
+];
+
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const wheelRadius = canvas.width / 2;
+
+function drawWheel(names) {
+    const anglePerColleague = (2 * Math.PI) / names.length;
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // clear previous drawing
+    for (let i = 0; i < names.length; i++) {
+        ctx.beginPath();
+        ctx.moveTo(wheelRadius, wheelRadius);
+        ctx.arc(
+            wheelRadius,
+            wheelRadius,
+            wheelRadius,
+            i * anglePerColleague,
+            (i + 1) * anglePerColleague
+        );
+        ctx.closePath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw text
+        ctx.save();
+        ctx.translate(wheelRadius, wheelRadius);
+        ctx.rotate(i * anglePerColleague + anglePerColleague/2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 16px Arial";
+        ctx.fillText(names[i], wheelRadius - 10, 10);
+        ctx.restore();
+    }
+}
+
+drawWheel(colleagues);
+
+let spinning = false;
+
+function spinWheel() {
+    if (spinning) return;
+    spinning = true;
+
+    // Ask who is spinning
+    let currentUser = prompt("Enter your name:");
+    if (!currentUser || !colleagues.includes(currentUser)) {
+        alert("Please enter a valid name from the list!");
+        spinning = false;
+        return;
+    }
+
+    // Exclude current user
+    const remainingColleagues = colleagues.filter(name => name !== currentUser);
+
+    drawWheel(remainingColleagues); // redraw wheel without the spinner
+
+    const spins = Math.floor(Math.random() * 3) + 5; 
+    const anglePerColleague = 360 / remainingColleagues.length;
+    const selectedIndex = Math.floor(Math.random() * remainingColleagues.length);
+    const finalAngle = 360 * spins - (selectedIndex * anglePerColleague) - anglePerColleague/2;
+
+    const duration = 4000; 
+    const start = performance.now();
+
+    function animate(time) {
+        let elapsed = time - start;
+        let progress = Math.min(elapsed / duration, 1);
+        let easeOut = 1 - Math.pow(1 - progress, 3);
+        let rotation = easeOut * finalAngle;
+
+        canvas.style.transform = `rotate(${rotation}deg)`;
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            document.getElementById('result').innerText = "Selected: " + remainingColleagues[selectedIndex];
+            localStorage.setItem('hasSpun', 'true');
+            document.getElementById('spinBtn').disabled = true;
+        }
+    }
+    requestAnimationFrame(animate);
+}
+
+const spinBtn = document.getElementById('spinBtn');
+
+if (localStorage.getItem('hasSpun')) {
+    document.getElementById('result').innerText = "You already picked a colleague!";
+    spinBtn.disabled = true;
+} else {
+    spinBtn.addEventListener('click', spinWheel);
+}
+</script>
